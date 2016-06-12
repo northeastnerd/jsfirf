@@ -1,0 +1,93 @@
+<html>
+<!-- License information: MIT License                                                     -->
+<!-- 											  -->
+<!-- Copyright (c) Chris Schalick 2016 All Rights Reserved.				  -->
+<!-- 											  -->
+<!-- Permission is hereby granted, free of charge, to any person obtaining a copy 	  -->
+<!-- of this software and associated documentation files (the "Software"), to deal 	  -->
+<!-- in the Software without restriction, including without limitation the rights 	  -->
+<!-- to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 		  -->
+<!-- copies of the Software, and to permit persons to whom the Software is furnished 	  -->
+<!-- to do so, subject to the following conditions:					  -->
+<!-- 											  -->
+<!--   The above copyright notice and this permission notice shall be included in all 	  -->
+<!--   copies or substantial portions of the Software.					  -->
+<!-- 											  -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,  -->
+<!-- INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 	  -->
+<!-- PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT   -->
+<!-- HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION 	  -->
+<!-- OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 	  -->
+<!-- SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.				  -->
+<!--                                                                                      -->
+<head>
+<link rel="stylesheet" media="screen" href="https://fontlibrary.org/face/jellee-typeface" type="text/css"/>
+<script src="scripts/jsfirf.js"></script>
+</head>
+<style>body {font-family: 'Jellee';font-size:14;}</style>
+<body>
+<h1 style="text-align:center;">JSFIRF FIR Filter Demo</h1>
+This page is an example application that demonstrates use of the jsfirf Javascript library for FIR filtering. The library provides a configurable FIR filter object with low pass, high pass and band pass filters. The user can select the filter order / depth and desired window function. Data is passed into the filters as ArrayBuffers of 8, 16 or 32 bit signed integers and the filtered results are returned as the same format ArrayBuffer. The library is pure javascript and this demo performs all calculations in the browser.
+</p><p>
+The filters implemented in the library use the sinc function to produce ideal linear phase response filters. The response is produced by summing weighted, delayed values from the input data. Response data is time-shifted by half the filter order, alignment with original data is up to the caller. Since the sinc function is not bounded (non-causal), practical use of FIR filters requires limiting to a finite depth or order. The resulting approximate filter is windowed to improve its response (weights are multiplied by an envelope, which reduces sharp edges at extremes). A number of popular windows are provided in the library. When creating a filter if no window is given the default is rectangular.
+</p>
+</p><p>
+The demo provides selection of filter order, sample rate, and transition frequencies. It passes a chirp pattern as input to low pass, high pass and band pass filters showing the resulting response of each. Try different windows, effective bit values and filter depths to see the library filters behave for your application. Note that the input sequence has substantial aliasing in higher frequencies (far right side) of the waves which distorts expected outputs.
+</p>
+<p>
+Enjoy!
+</p>
+<table>
+<tr><td valign="top">
+<table align="middle" class="foo" style="font-size: 14;">
+<tr>
+  <td>Sampling Rate</td><td><input type=text id="smprate"></input></td>
+</tr><tr>
+  <td>Effective Bits (signed integers)</td><td><select id="bits">
+        <option value="8">8</option>
+        <option value="16">16</option>
+        <option value="32">32</option>
+      </select>
+  </td>
+</tr><tr>
+  <td>low pass transition frequency</td><td><input type=text id="lopass"></input></td>
+</tr><tr>
+  <td>high pass transition frequency</td><td><input type=text id="hipass"></input></td>
+</tr><tr>
+  <td>Filter order (must be even)</td><td><input type=text id="order"></input></td>
+</tr><tr>
+  <td>Filter window</td><td><select id="fwindow">
+        <option value="rectangular">Rectangular</option>
+        <option value="bartlett">Bartlett</option>
+        <option value="hanning">Hanning</option>
+        <option value="hamming">Hamming</option>
+        <option value="blackman">Blackman</option>
+      </select></td>
+</tr><tr>
+  <td></td><td><button id="go">Show Response</button></td>
+</tr><tr>
+  <td>Input Sequence</td>
+</tr><tr>
+  <td><canvas id="input_response" width="300" height="100"></canvas></td>
+</tr><tr>
+  <td>Left click on the Input Sequence to pan,<br>mouse wheel to zoom, right click zoom full</td>
+</table>
+</td><td valign="top">
+<table style="font-size: 14;">
+<tr>
+  <td>Low Pass Response</td>
+</tr><tr>
+  <td><canvas id="lowpass_response" width="300" height="100"></canvas></td>
+</tr><tr>
+  <td>High Pass Response</td>
+</tr><tr>
+  <td><canvas id="highpass_response" width="300" height="100"></canvas></td>
+</tr><tr>
+  <td>Band Pass Response</td>
+</tr><tr>
+  <td><canvas id="bandpass_response" width="300" height="100"></canvas></td>
+</table>
+</td></tr></table>
+<script src="scripts/jsfirf_example.js"></script>
+</body>
+</html>
