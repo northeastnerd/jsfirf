@@ -100,22 +100,22 @@ jsfirf.prototype.unity = function(){
 jsfirf.prototype.set_val = function(dvw, idx, bytes, val){
   "use strict";
   if(bytes == 1)
-    dvw.setInt8(idx * bytes, val);
+    dvw.setInt8(idx, val);
   else if(bytes == 2)
-    dvw.setInt16(idx * bytes, val);
+    dvw.setInt16(idx << 1, val);
   else if(bytes == 4)
-    dvw.setInt32(idx * bytes, val);
+    dvw.setInt32(idx << 2, val);
 }
 
 jsfirf.prototype.get_val = function(dvw, idx, bytes){
   "use strict";
   var val;
   if(bytes == 1)
-    val = dvw.getInt8(idx * bytes);
+    val = dvw.getInt8(idx);
   else if(bytes == 2)
-    val = dvw.getInt16(idx * bytes);
+    val = dvw.getInt16(idx << 1);
   else if(bytes == 4)
-    val = dvw.getInt32(idx * bytes);
+    val = dvw.getInt32(idx << 2);
   return val;
 }
 
@@ -141,7 +141,7 @@ jsfirf.prototype.apply = function(data, bits){
   var ovw = new DataView(filtered);
   var bytes = bits / 8;
   var len = data.byteLength / bytes;
-  for(var x = 0; x < len; x += bytes){
+  for(var x = 0; x < len; x++){
     result = 0;
     tapmax = this.order;
     if(x < this.order)
@@ -186,8 +186,8 @@ jsfirf.prototype.hipass = function(data, trans, bits){
   var high = new ArrayBuffer(data.byteLength);
   var highvw = new DataView(high);
   var bytes = bits / 8;
-  var val;
-  for(var x = 0; x < (low.byteLength / bytes); x++){
+  var val, last = low.byteLength / bytes;
+  for(var x = 0; x < last; x++){
     val = this.get_val(allvw, x, bytes) - this.get_val(lowvw, x, bytes);
     this.set_val(highvw, x, bytes, val);
   }
