@@ -1,27 +1,29 @@
-// License information: MIT License
-//
-// Copyright (c) Chris Schalick 2016 All Rights Reserved.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is furnished
-// to do so, subject to the following conditions:
-//
-//   The above copyright notice and this permission notice shall be included in all
-//   copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-// INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-// PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-// HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-// SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+/*
+License information: MIT License
 
-// Tree structure code creates an object hierarchy on demand
-// inside an HTML table, allows click to expand / collapse
-// to view and traverse the hierarchy.
+Copyright (c) Chris Schalick 2016 All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is furnished
+to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Tree structure code creates an object hierarchy on demand
+inside an HTML table, allows click to expand / collapse
+to view and traverse the hierarchy.
+*/
 
 function jsfirf(smp, trans, order, win){
   "use strict";
@@ -99,12 +101,21 @@ jsfirf.prototype.unity = function(){
 
 jsfirf.prototype.set_val = function(dvw, idx, bytes, val){
   "use strict";
-  if(bytes == 1)
-    dvw.setInt8(idx, val);
-  else if(bytes == 2)
-    dvw.setInt16(idx << 1, val);
-  else if(bytes == 4)
-    dvw.setInt32(idx << 2, val);
+  var mx = Math.pow(2, (8 * bytes) - 1);
+  var abs = Math.abs(val);
+  var clip = abs > mx;
+  var clipped;
+  if(clip)
+    clipped = val / (abs + 1) * mx;
+  else
+    clipped = val;
+  if(bytes == 1){
+    dvw.setInt8(idx, clipped);
+  } else if(bytes == 2){
+    dvw.setInt16(idx << 1, clipped);
+  } else if(bytes == 4){ 
+    dvw.setInt32(idx << 2, clipped);
+  }
 }
 
 jsfirf.prototype.get_val = function(dvw, idx, bytes){
