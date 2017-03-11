@@ -68,6 +68,17 @@ function show_response(id, bfr, bits){
   rctx.stroke();
 }
 
+function progress(label, val){
+  var dv = g("progbar");
+  var cv = g("progbar_cv");
+  dv.innerHTML = " " + label + ": " + val + "%";
+  var ctx = cv.getContext("2d");
+  ctx.fillStyle = "#f0f0f0";
+  ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.fillStyle = "#00f000";
+  ctx.fillRect(0, 0, val / 100 * cv.width, cv.height);
+}
+
 g("go").onclick = function(){
   "use strict";
   filtered.smprate = g("smprate").value * 1.0;
@@ -82,11 +93,11 @@ g("go").onclick = function(){
   filtered.bytes = filtered.bits / 8;
   filtered.inp = new ArrayBuffer(displ * filtered.bytes);
   filtered.chirp = new DataView(filtered.inp);
-  var val, pos, dispf = displ / 100;
+  var val, pos;
   for(x = 0; x < displ; x++)
   {
     pos = x / displ;
-    thisper = (pos * p1) + (1 - pos) * p0;
+    thisper = p1 + (1 - pos) * (p0 - p1);
     val = Math.round(50 * Math.sin(x / thisper * 2 * Math.PI));
     if(filtered.bytes == 1)
       filtered.chirp.setInt8(x, val);
@@ -98,13 +109,21 @@ g("go").onclick = function(){
 
   filtered.order = g("order").value * 1.0;
   filtered.win = g("fwindow").value;
-  var filter = new jsfirf(filtered.smprate, filtered.lofreq, filtered.order, filtered.win);
-  filtered.lopass = filter.lopass(filtered.inp, filtered.hifreq, filtered.bits);
-  filtered.hipass = filter.hipass(filtered.inp, filtered.lofreq, filtered.bits);
-  filtered.bandpass = filter.bandpass(filtered.inp, filtered.lofreq, filtered.hifreq, filtered.bits);
   filtered.zoom_pos = 150;
   filtered.zoom_factor = 1;
-  show_filtered();
+  var filter = new jsfirf(filtered.smprate, filtered.lofreq, filtered.order, filtered.win);
+  // blocking sequence
+//  filtered.lopass = filter.lopass(filtered.inp, filtered.hifreq, filtered.bits);
+//  filtered.hipass = filter.hipass(filtered.inp, filtered.lofreq, filtered.bits);
+//  filtered.bandpass = filter.bandpass(filtered.inp, filtered.lofreq, filtered.hifreq, filtered.bits);
+//  show_filtered();
+  // non-blocking sequence
+  var lo_cb = function(result){filtered.lopass = result; do_hi();};
+  var do_hi = function(){filter.hipass_nb(filtered.inp, filtered.lofreq, filtered.bits, hi_cb, progress, "hipass");};
+  var hi_cb = function(result){filtered.hipass = result; do_bd();};
+  var do_bd = function(){filter.bandpass_nb(filtered.inp, filtered.lofreq, filtered.hifreq, filtered.bits, bd_cb, progress, "bandpass");};
+  var bd_cb = function(result){filtered.bandpass = result; show_filtered();};
+  filter.lopass_nb(filtered.inp, filtered.hifreq, filtered.bits, lo_cb, progress, "lowpass");
 }
 
 function show_filtered(){
@@ -166,10 +185,6 @@ g("input_response").onwheel = function(ev){
     filtered.zoom_factor++;
   else
     filtered.zoom_factor--;
-  if(filtered.zoom_factor < 1)
-    filtered.zoom_factor = 1;
-  if(filtered.zoom_factor > (filtered.pts / 300))
-    filtered.zoom_factor = (filtered.pts / 300);
   show_filtered();
   return false;
 }

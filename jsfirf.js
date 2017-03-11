@@ -145,6 +145,68 @@ jsfirf.prototype.get_array = function(dvw, bytes){
   return arr;
 }
 
+jsfirf.prototype.chunk = function(st, en, ivw, ovw, bytes, next, prog_cb, label, val){
+  var filter = this;
+  var call = function(){filter.apply_piece(st, en, ivw, ovw, bytes); prog_cb(label, val); if(next != null)setTimeout(next, 10)};
+  return call;
+}
+
+jsfirf.prototype.nb_cb = function(ovw, cb){
+  var call = function(){cb(ovw.buffer);};
+  return call;
+}
+
+jsfirf.prototype.apply_chain = function(len, ivw, ovw, bytes, cb, prog_cb, label){
+  var loops = 20;
+  var inc = parseInt(len / loops);
+  var filter = this;
+  var last = this.nb_cb(ovw, cb);
+  var last_chunk = this.chunk(0, inc, ivw, ovw, bytes, last, prog_cb, label, 100);
+  var call, prev = last_chunk, en;
+  for(var x = inc; x < len; x = x + inc){
+    en = x + inc;
+    if(en > len)
+      en = len;
+    call = this.chunk(x, en, ivw, ovw, bytes, prev, prog_cb, label, Math.round(100 - 100 * (x / len)));
+    prev = call;
+  }
+  return call;
+}
+
+jsfirf.prototype.apply_piece = function(st, en, ivw, ovw, bytes){
+  for(var x = st; x < en; x++){
+    result = 0;
+    tapmax = this.order;
+    if(x < this.order)
+      result = 0; 
+    else for(var n = 0; n <= tapmax; n++)
+      result += this.taps[n] * this.get_val(ivw, x - tapmax + n, bytes);
+    this.set_val(ovw, x, bytes, result);
+  }
+}
+
+jsfirf.prototype.apply_nb = function(data, bits, cb, prog_cb, label){
+  "use strict";
+  var result, tapmax, filtered = new ArrayBuffer(data.byteLength);
+  var ivw = new DataView(data);
+  var ovw = new DataView(filtered);
+  var bytes = bits / 8;
+  var len = data.byteLength / bytes;
+
+  // create a chain of function call closures that are 0:n, n:2n, 2n:3n, ...M-n:M
+  // 1) make the indexed piece routine
+  // 2) make the progress troutine
+  // 3) make a recursive tree of piece-wise closure calls with progress callbacks
+  //    with the setTimeout calls on the call to the next piece closure
+  // TODO:
+  // - be smart about how many are created (ie, only enough for 1/4 second updates?)
+
+  var calls = this.apply_chain(len, ivw, ovw, bytes, cb, prog_cb, label);
+  calls();
+
+  return filtered;
+};
+
 jsfirf.prototype.apply = function(data, bits){
   "use strict";
   var result, tapmax, filtered = new ArrayBuffer(data.byteLength);
@@ -152,6 +214,7 @@ jsfirf.prototype.apply = function(data, bits){
   var ovw = new DataView(filtered);
   var bytes = bits / 8;
   var len = data.byteLength / bytes;
+
   for(var x = 0; x < len; x++){
     result = 0;
     tapmax = this.order;
@@ -161,6 +224,7 @@ jsfirf.prototype.apply = function(data, bits){
       result += this.taps[n] * this.get_val(ivw, x - tapmax + n, bytes);
     this.set_val(ovw, x, bytes, result);
   }
+
   return filtered;
 };
 
@@ -217,4 +281,65 @@ jsfirf.prototype.bandpass = function(data, lotrans, hitrans, bits){
   var hipass = this.hipass(data, lotrans, bits);
   var bandpass = this.lopass(hipass, hitrans, bits);
   return bandpass;
+};
+
+jsfirf.prototype.lopass_nb = function(data, trans, bits, cb, prog_cb, label){
+  "use strict";
+  var frate = this.smp_freq, forder = this.order, fwin = this.win_type;
+  if(typeof frate == "undefined")
+    return [];
+  if(typeof forder == "undefined")
+    forder = 20;
+  if(typeof fwin == "undefined")
+    fwin = "rectangular";
+  var filter = new jsfirf(frate, trans, forder, fwin);
+  filter.apply_nb(data, bits, cb, prog_cb, label);
+};
+
+jsfirf.prototype.hipass_nb = function(data, trans, bits, cb, prog_cb, label){
+  "use strict";
+  var frate = this.smp_freq, forder = this.order, fwin = this.win_type;
+  if(typeof frate == "undefined")
+    return [];
+  if(typeof forder == "undefined")
+    forder = 20;
+  if(typeof fwin == "undefined")
+    fwin = "rectangular";
+  var lowpass = new jsfirf(frate, trans, forder, fwin);
+  var allpass = new jsfirf(frate, trans, forder, fwin);
+  allpass.unity();
+  var filter = this;
+  var low;
+  var low_cb = function(result){low = result; do_all()};
+  var do_all = function(){allpass.apply_nb(data, bits, all_cb, prog_cb, label);};
+  var all_cb = function(result){
+    var all = result;
+    var lowvw = new DataView(low);
+    var allvw = new DataView(all);
+    var high = new ArrayBuffer(data.byteLength);
+    var highvw = new DataView(high);
+    var bytes = bits / 8;
+    var val, last = low.byteLength / bytes;
+    for(var x = 0; x < last; x++){
+      val = filter.get_val(allvw, x, bytes) - filter.get_val(lowvw, x, bytes);
+      filter.set_val(highvw, x, bytes, val);
+    }
+    cb(high);
+  };
+
+  lowpass.apply_nb(data, bits, low_cb, prog_cb, label);
+};
+
+jsfirf.prototype.bandpass_nb = function(data, lotrans, hitrans, bits, cb, prog_cb, label){
+  "use strict";
+  var frate = this.smp_freq, forder = this.order, fwin = this.win_type;
+  if(typeof frate == "undefined")
+    return [];
+  if(typeof forder == "undefined")
+    forder = 20;
+  if(typeof fwin == "undefined")
+    fwin = "rectangular";
+  var filter = this;
+  var hi_cb = function(hipass){filter.lopass_nb(hipass, hitrans, bits, cb, prog_cb, label);};
+  filter.hipass_nb(data, lotrans, bits, hi_cb, prog_cb, label);
 };
