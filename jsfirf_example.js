@@ -185,6 +185,8 @@ g("input_response").onwheel = function(ev){
     filtered.zoom_factor++;
   else
     filtered.zoom_factor--;
+  if(filtered.zoom_factor < 0)
+    filtered.zoom_factor = 0;
   show_filtered();
   return false;
 }
