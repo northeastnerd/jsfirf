@@ -143,7 +143,7 @@ g("input_response").onmousedown = function(ev){
   "use strict";
   var cv = g("input_response"), click_x, min_x, max_x, ctr_x, wid_x;
   if(ev.x != undefined)
-    click_x = event.x;
+    click_x = ev.x;
   else 
     click_x = ev.clientX + document.body.scrollLeft +
               document.documentElement.scrollLeft;
