@@ -181,7 +181,7 @@ g("input_response").onmousemove = function(ev){
 
 g("input_response").onwheel = function(ev){
   "use strict";
-  if(ev.wheelDelta > 0)
+  if((ev.wheelDelta || ev.deltaY) > 0)
     filtered.zoom_factor++;
   else
     filtered.zoom_factor--;
