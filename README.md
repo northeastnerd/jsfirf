@@ -9,4 +9,4 @@ There is a live demo here: https://rawgit.com/northeastnerd/jsfirf/master/jsfirf
 Add a progress bar to the demo and UI updating during filtering allowing large data sets to succeed without Aw Snap messages.
 
 ## Version 0.1
-Functional, the demo has ugly aliasing in it but the filters do the right thing. Large data sets (megabytes) are challenging, cooperative release of browser cpu planned for next release.
+Functional, the demo has ugly aliasing in the input waveform but the filters do the right thing. Large data sets (megabytes) are challenging, cooperative release of browser cpu planned for next release.
